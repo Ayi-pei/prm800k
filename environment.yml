@@ -1,0 +1,7 @@
+name: my_environment  # 设置环境名称
+channels:
+  - defaults  # 使用默认的 Conda 仓库
+dependencies:
+  - python=3.10  # 设置 Python 版本
+  - flake8  # 代码风格检查工具
+  - pytest  # 单元测试工具
