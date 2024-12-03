@@ -22,24 +22,30 @@ jobs:
       with:
         python-version: '3.10'
 
+    - name: Initialize Conda
+      run: |
+        # 初始化conda，确保环境能正常激活
+        $HOME/miniconda/bin/conda init
+
     - name: Check if environment.yml exists
       run: |
         ls -l ./environment.yml
 
     - name: Install dependencies
       run: |
+        # 安装依赖
         conda env update --file ./environment.yml --name base
-        conda activate base
-        # Ensure flake8 and pytest are installed in the environment
-        conda install -n base flake8 pytest
 
     - name: Lint with flake8
       run: |
-        # Lint the code using flake8 in the 'base' environment
-        conda run -n base flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        conda run -n base flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        conda run -n base flake8 .
+        conda install flake8
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
     - name: Test with pytest
       run: |
-        # Run tests using pytest
-        conda run -n base pytest --maxfail=1 --disable-warnings -q
+        conda install pytest
+        pytest
