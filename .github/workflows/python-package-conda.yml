@@ -1,50 +1,64 @@
-name: Python Package using Conda
+name: Python CI Workflow
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
 
 jobs:
   build-linux:
     runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 5
 
     steps:
-    - uses: actions/checkout@v4
+    # Step 1: 检出代码
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
+    # Step 2: 安装 Miniconda
     - name: Install Miniconda
       run: |
         wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
         bash Miniconda3-latest-Linux-x86_64.sh -b -p $HOME/miniconda
         echo "$HOME/miniconda/bin" >> $GITHUB_PATH
+        export PATH="$HOME/miniconda/bin:$PATH"  # 确保 Conda 可用
 
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v3
-      with:
-        python-version: '3.10'
-
+    # Step 3: 初始化 Conda
     - name: Initialize Conda
       run: |
-        # 初始化conda，确保环境能正常激活
-        $HOME/miniconda/bin/conda init
+        source $HOME/miniconda/bin/activate  # 激活 Conda
+        conda init bash                      # 初始化 Bash Shell
+        source ~/.bashrc                     # 加载 Bash 配置文件
 
-    - name: Check if environment.yml exists
-      run: |
-        ls -l ./environment.yml
+    # Step 4: 检查环境文件
+    - name: Check environment file
+      run: ls -l ./environment.yml
 
+    # Step 5: 安装依赖
     - name: Install dependencies
       run: |
-        # 安装依赖
-        conda env update --file ./environment.yml --name base
+        conda env update --file ./environment.yml --name base  # 安装环境依赖
+        source $HOME/miniconda/bin/activate                    # 再次激活 Conda
+        conda activate base                                    # 激活 base 环境
+        conda list                                             # 确认安装的依赖
 
+    # Step 6: 安装并验证 flake8
+    - name: Install and verify flake8
+      run: |
+        conda install -n base flake8 -y        # 安装 flake8
+        source $HOME/miniconda/bin/activate    # 激活 Conda
+        conda activate base                    # 再次激活 base 环境
+        flake8 --version                       # 确保 flake8 可用
+
+    # Step 7: 使用 flake8 检查代码
     - name: Lint with flake8
       run: |
-        conda run -n base flake8 .
-        conda install flake8
-        # stop the build if there are Python syntax errors or undefined names
+        source $HOME/miniconda/bin/activate    # 激活 Conda
+        conda activate base                    # 激活 base 环境
+        flake8 .                               # 运行 flake8
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
         conda install pytest
