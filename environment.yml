@@ -29,14 +29,22 @@ jobs:
       run: |
         conda env update --file ./environment.yml --name base
 
+    - name: Install flake8
+      run: |
+        conda install -n base flake8 -y
+
+    - name: Verify flake8 Installation
+      run: |
+        conda list -n base | grep flake8
+
     - name: Lint with flake8
       run: |
         conda run -n base flake8 .
-        conda install flake8
+        # Optional: Additional flake8 configurations
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
     - name: Test with pytest
       run: |
-        conda install pytest
-        pytest
+        conda install pytest -y
+        conda run -n base pytest
