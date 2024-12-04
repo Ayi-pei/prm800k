@@ -1,7 +1,42 @@
-name: my_environment  # 设置环境名称
-channels:
-  - defaults  # 使用默认的 Conda 仓库
-dependencies:
-  - python=3.10  # 设置 Python 版本
-  - flake8  # 代码风格检查工具
-  - pytest  # 单元测试工具
+name: Python Package using Conda
+
+on: [push]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 5
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Miniconda
+      run: |
+        wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+        bash Miniconda3-latest-Linux-x86_64.sh -b -p $HOME/miniconda
+        echo "$HOME/miniconda/bin" >> $GITHUB_PATH
+
+    - name: Initialize Conda
+      run: |
+        conda init bash
+        source ~/.bashrc
+
+    - name: Check environment file
+      run: ls -l ./environment.yml
+
+    - name: Install dependencies
+      run: |
+        conda env update --file ./environment.yml --name base
+
+    - name: Lint with flake8
+      run: |
+        conda run -n base flake8 .
+        conda install flake8
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    - name: Test with pytest
+      run: |
+        conda install pytest
+        pytest
